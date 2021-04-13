@@ -2,6 +2,8 @@
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
+using TMPro;
+using UnityEngine.SceneManagement;
 
 public class PlayerController : MonoBehaviour
 {
@@ -10,6 +12,8 @@ public class PlayerController : MonoBehaviour
     private Rigidbody2D rb;
     private Animator anim;
     private Collider2D coll;
+ 
+    
 
     //FSM
     private enum State {idle, running, jumping, falling, hurt } // các hành động của nhân vâtj
@@ -17,13 +21,16 @@ public class PlayerController : MonoBehaviour
 
     
 
-    // Kiểm tra biến
     [SerializeField] private LayerMask ground;
     [SerializeField] private float speed = 5f;
     [SerializeField] private float jumpForce = 10f;
     [SerializeField] private int cherries = 0;
-    [SerializeField] private Text cherryText;
+    [SerializeField] private TextMeshProUGUI cherryText;
     [SerializeField] private float hurtForce = 10f;
+    [SerializeField] private AudioSource cherry;
+    [SerializeField] private AudioSource footstep;
+    [SerializeField] private int health;
+    [SerializeField] private Text healthAmount;
 
 
     private void Start()
@@ -31,6 +38,7 @@ public class PlayerController : MonoBehaviour
         rb = GetComponent<Rigidbody2D>();
         anim = GetComponent<Animator>();
         coll = GetComponent<Collider2D>();
+        healthAmount.text = health.ToString();
     }
 
     private void Update()
@@ -71,7 +79,7 @@ public class PlayerController : MonoBehaviour
         {
 
         }
-        // nhảy bằng phím space or chạm vào màn hình
+        // nhảy 
         if (Input.GetButtonDown("Jump") && coll.IsTouchingLayers())
         {
             Jump();
@@ -128,6 +136,7 @@ public class PlayerController : MonoBehaviour
     {
         if(collision.tag == "Collectable")
         {
+            cherry.Play();
             Destroy(collision.gameObject);
             cherries += 1;
             cherryText.text = cherries.ToString();
@@ -139,29 +148,45 @@ public class PlayerController : MonoBehaviour
     {
         if(other.gameObject.tag == "Enemy")
         {
-            Frog frog = other.gameObject.GetComponent<Frog>();
+            Enemy enemy = other.gameObject.GetComponent<Enemy>();
             if(state == State.falling)
             {
-                frog.JumpedOn();
+                enemy.JumpedOn();
                 Jump(); 
             }
             else
             {
                 state = State.hurt;
-                if(other.gameObject.transform.position.x > transform.position.x)
+                HandleHealth();
+
+                if (other.gameObject.transform.position.x > transform.position.x)
                 {
                     //Enemy is to my right therefore I should be damaged and move left
                     rb.velocity = new Vector2(-hurtForce, rb.velocity.y);
                 }
-                else 
+                else
                 {
                     //Enemy is to my right therefore I should be damaged and move left
                     rb.velocity = new Vector2(hurtForce, rb.velocity.y);
                 }
             }
-            
+
         }
     }
 
+    private void HandleHealth()
+    {
+        health -= 1;
+        healthAmount.text = health.ToString();
+        if (health <= 0)
+        {
+            SceneManager.LoadScene(SceneManager.GetActiveScene().name);
+        }
+    }
+
+    private void Footstep() 
+    {
+        footstep.Play();
+    }
 
 }
