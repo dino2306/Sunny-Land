@@ -1,5 +1,3 @@
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
@@ -11,9 +9,8 @@ public class Fall : MonoBehaviour
     {
         if(collision.gameObject.tag == "Player")
         {
+            
             SceneManager.LoadScene(SceneManager.GetActiveScene().name);
         }    
     }
-
-
 }

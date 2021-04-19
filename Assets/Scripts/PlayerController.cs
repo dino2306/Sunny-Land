@@ -12,18 +12,17 @@ public class PlayerController : MonoBehaviour
     private Rigidbody2D rb;
     private Animator anim;
     private Collider2D coll;
- 
-    
 
     //FSM
-    private enum State {idle, running, jumping, falling, hurt } // các hành động của nhân vâtj
+    private enum State { idle, running, jumping, falling, hurt } // các hành động của nhân vâtj
     private State state = State.idle;
 
-    
+
 
     [SerializeField] private LayerMask ground;
-    [SerializeField] private float speed = 5f;
-    [SerializeField] private float jumpForce = 10f;
+    [SerializeField] private float moveSpeed, jumpForce;
+
+    [SerializeField] private bool moveLeft, moveRight;
     [SerializeField] private int cherries = 0;
     [SerializeField] private TextMeshProUGUI cherryText;
     [SerializeField] private float hurtForce = 10f;
@@ -39,72 +38,86 @@ public class PlayerController : MonoBehaviour
         anim = GetComponent<Animator>();
         coll = GetComponent<Collider2D>();
         healthAmount.text = health.ToString();
-    }
 
+
+        moveSpeed = 5f;
+        jumpForce = 10f;
+        moveLeft = false;
+        moveRight = false;
+    }
+    
     private void Update()
     {
-        if (state != State.hurt )
+        if (state != State.hurt)
         {
             MoveManager();
+
         }
-        
-        AnimationState(); 
+
+        AnimationState();
         anim.SetInteger("state", (int)state); //đặt animation dựa trên trạng thái của Enumerator
     }
 
     private void MoveManager()
     {
-        float hDirection = Input.GetAxis("Horizontal");
-
-
-        // đi sang phải
-        if (hDirection < 0)
+        if (moveLeft)
         {
-            rb.velocity = new Vector2(-speed, rb.velocity.y);
+            rb.velocity = new Vector2(-moveSpeed, 0f);
             transform.localScale = new Vector2(-1, 1);
-
-
         }
 
-        // đi sang trái
-
-        else if (hDirection > 0)
+        if (moveRight)
         {
-            rb.velocity = new Vector2(speed, rb.velocity.y);
+            rb.velocity = new Vector2(moveSpeed, 0f);
             transform.localScale = new Vector2(1, 1);
-
         }
 
-        else
-        {
-
-        }
-        // nhảy 
         if (Input.GetButtonDown("Jump") && coll.IsTouchingLayers())
         {
             Jump();
-        }   
+        }
     }
 
-    private void Jump() 
+    public void MoveLeft()
+    {
+        moveLeft = true;
+    }
+
+    public void MoveRight()
+    {
+        moveRight = true;
+    }
+
+    public void Jump()
     {
         rb.velocity = new Vector2(rb.velocity.x, jumpForce);
+
         state = State.jumping;
+
     }
+    public void StopMoving()
+    {
+        moveLeft = false;
+        moveRight = false;
+    }
+
+  
+
+   
 
     private void AnimationState()
     {
-        if(state == State.jumping) 
-        { 
-            if(rb.velocity.y < .1f)
+        if (state == State.jumping)
+        {
+            if (rb.velocity.y < .1f)
             {
                 state = State.falling;
             }
         }
 
-        else if(state == State.falling)
+        else if (state == State.falling)
         {
-            if(coll.IsTouchingLayers(ground))
+            if (coll.IsTouchingLayers(ground))
             {
                 state = State.idle;
             }
@@ -112,7 +125,7 @@ public class PlayerController : MonoBehaviour
 
         else if (state == State.hurt)
         {
-            if(Mathf.Abs(rb.velocity.x) < .1f)
+            if (Mathf.Abs(rb.velocity.x) < .1f)
             {
                 state = State.idle;
 
@@ -120,7 +133,7 @@ public class PlayerController : MonoBehaviour
         }
 
         // trạng thái của nhân vật
-        else if(Mathf.Abs(rb.velocity.x) > 2f)
+        else if (Mathf.Abs(rb.velocity.x) > 2f)
         {
             //Di chuyển
             state = State.running;
@@ -134,25 +147,25 @@ public class PlayerController : MonoBehaviour
     // va chạm ăn điểm
     private void OnTriggerEnter2D(Collider2D collision)
     {
-        if(collision.tag == "Collectable")
+        if (collision.tag == "Collectable")
         {
             cherry.Play();
             Destroy(collision.gameObject);
             cherries += 1;
             cherryText.text = cherries.ToString();
-        }    
+        }
     }
-    
-    
+
+
     private void OnCollisionEnter2D(Collision2D other)
     {
-        if(other.gameObject.tag == "Enemy")
+        if (other.gameObject.tag == "Enemy")
         {
             Enemy enemy = other.gameObject.GetComponent<Enemy>();
-            if(state == State.falling)
+            if (state == State.falling)
             {
                 enemy.JumpedOn();
-                Jump(); 
+                Jump();
             }
             else
             {
@@ -184,7 +197,7 @@ public class PlayerController : MonoBehaviour
         }
     }
 
-    private void Footstep() 
+    private void Footstep()
     {
         footstep.Play();
     }
